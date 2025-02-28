@@ -1,31 +1,19 @@
 import gradio as gr
 import torch
 import transformers
-import speech_recognition as sr
-import os
-from transformers import AutoModel, AutoTokenizer, pipeline
 import librosa
-
-
-ultravox_model_path = "./ultravox"
-
-# ✅ Function to load models safely
-def load_model(model_class, path, **kwargs):
-    try:
-        return model_class.from_pretrained(path, **kwargs)
-    except Exception as e:
-        print(f"❌ Error loading model from {path}: {e}")
-        exit()
-
+import numpy as np
+import tempfile
+import os
 
 class UltravoxInterface:
     def __init__(self):
         """Initialize the Ultravox model and settings"""
         print("Loading Ultravox model... This may take a few minutes...")
-        self.model = load_model(AutoModel, ultravox_model_path, trust_remote_code=True, torch_dtype=torch.float32)
-        self.tokenizer = load_model(AutoTokenizer, ultravox_model_path, trust_remote_code=True)
-        
-        self.pipe = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
+        self.pipe = transformers.pipeline(
+            model='fixie-ai/ultravox-v0_4',
+            trust_remote_code=True
+        )
         print("Model loaded successfully!")
         
         # Default system prompt
@@ -60,8 +48,8 @@ class UltravoxInterface:
                 },
                 max_new_tokens=30
             )
-
-         # The output format changed in v0_4 - handle it directly
+            
+            # The output format changed in v0_4 - handle it directly
             if isinstance(result, str):
                 return result
             elif isinstance(result, list):
@@ -141,7 +129,9 @@ def main():
     # Launch the interface
     interface = app.create_interface()
     interface.launch(
-        share=True  # Enable sharing via Gradio
+        share=True,  # Enable sharing via Gradio
+        server_name="0.0.0.0",  # Make available on all network interfaces
+        server_port=7860  # Default Gradio port
     )
 
 if __name__ == "__main__":
