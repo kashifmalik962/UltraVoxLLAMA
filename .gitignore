@@ -1,0 +1,10 @@
+# ignore ALL .log files
+*env
+env/
+*__pycache__
+.env
+ultravox/model.safetensors
+
+nohup.out
+Dental_Backend/Dental_Backend/settings.py
+Dental_Backend/Dental_Backend/settings.py
