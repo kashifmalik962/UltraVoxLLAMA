@@ -4,6 +4,7 @@ import transformers
 import speech_recognition as sr
 import os
 from transformers import AutoModel, AutoTokenizer, pipeline
+import librosa
 
 
 ultravox_model_path = "./ultravox"
@@ -39,32 +40,39 @@ class UltravoxInterface:
             custom_prompt: Optional custom system prompt
         """
         try:
-            recognizer = sr.Recognizer()
-            with sr.AudioFile(audio_path) as source:
-                print("🔄 Converting Speech to Text...")
-                audio_data = recognizer.record(source)
-                transcription = recognizer.recognize_google(audio_data)
-                print("🎤 Transcription:", transcription)
-
-            # Prepare prompt for text generation
-            prompt = (custom_prompt if custom_prompt else self.default_prompt) + f"\nUser: {transcription}\nAI:"
-            print("prompt==>", prompt)
-            # Generate response
-            print("🔄 Generating AI response...")
-            response = self.pipe(prompt, max_new_tokens=50, pad_token_id=self.tokenizer.eos_token_id)
-            print("response ==>", response)
+            # Load and preprocess audio
+            audio, sr = librosa.load(audio_path, sr=16000)
             
-            generated_text = response[0]["generated_text"]
-            print("generated_text ==>", generated_text)
+            # Prepare conversation turns
+            turns = [
+                {
+                    "role": "system",
+                    "content": custom_prompt if custom_prompt else self.default_prompt
+                }
+            ]
             
-            return generated_text
+            # Get model response
+            result = self.pipe(
+                {
+                    'audio': audio,
+                    'turns': turns,
+                    'sampling_rate': sr
+                },
+                max_new_tokens=30
+            )
 
-        except sr.UnknownValueError:
-            return "Sorry, I couldn't understand the audio."
-        except sr.RequestError as e:
-            return f"Speech Recognition service error: {e}"
+         # The output format changed in v0_4 - handle it directly
+            if isinstance(result, str):
+                return result
+            elif isinstance(result, list):
+                return result[0] if result else "No response generated"
+            elif isinstance(result, dict):
+                return result.get('generated_text', "No response generated")
+            else:
+                return str(result)
+            
         except Exception as e:
-            return f"Error processing audio: {str(e)}"
+            return f"Error processing audio: {str(e)}\nType of result: {type(result)}"
 
     def create_interface(self):
         """Create and configure the Gradio interface"""
