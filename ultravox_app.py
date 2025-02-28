@@ -27,6 +27,7 @@ class UltravoxInterface:
             audio_path: Path to the audio file
             custom_prompt: Optional custom system prompt
         """
+        print(f"Received audio_path: {audio_path}")  # Debugging line
         try:
             try:
                 # Load and preprocess audio
