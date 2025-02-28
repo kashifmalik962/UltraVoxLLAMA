@@ -28,16 +28,19 @@ class UltravoxInterface:
             custom_prompt: Optional custom system prompt
         """
         try:
-            # Load and preprocess audio
-            audio, sr = librosa.load(audio_path, sr=16000)
-            
-            # Prepare conversation turns
-            turns = [
-                {
-                    "role": "system",
-                    "content": custom_prompt if custom_prompt else self.default_prompt
-                }
-            ]
+            try:
+                # Load and preprocess audio
+                audio, sr = librosa.load(audio_path, sr=16000)
+                
+                # Prepare conversation turns
+                turns = [
+                    {
+                        "role": "system",
+                        "content": custom_prompt if custom_prompt else self.default_prompt
+                    }
+                ]
+            except Exception as e:
+                return f"Error processing audio: {str(e)}"
             
             # Get model response
             result = self.pipe(
